@@ -1,27 +1,34 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import Cookie from "js-cookie";
-export const getProducts = createAsyncThunk("/getProducts", async () => {
-  try {
-    let products = await axios.get("http://localhost:8090/product/");
-    return products.data;
-  } catch (error) {
-    return error;
+export const getProducts = createAsyncThunk(
+  "/getProducts",
+  async (jwtToken) => {
+    try {
+      let products = await axios.get("http://localhost:8090/product/", {
+        headers: { Authorization: `Bearer ${jwtToken?.token}` },
+      });
+      return products.data;
+    } catch (error) {
+      return error;
+    }
   }
-});
+);
 export const postData = createAsyncThunk("/postData", async (data) => {
-  let products = await axios.post("http://localhost:8090/product", data);
+  console.log("data", data);
+  let products = await axios.post("http://localhost:8090/product", data, {
+    headers: { Authorization: `Bearer ${data?.token}` },
+  });
   return products.data;
 });
 
 export const SignupUser = createAsyncThunk("/signup", async (data) => {
-  console.log("sign up", data);
   try {
     let userdata = await axios.post(
       "http://localhost:8090/user/api/signup",
       data
     );
-    console.log("userdata", userdata);
+
     Cookie.set("token", userdata.data?.token);
     return userdata.data;
   } catch (error) {
@@ -30,13 +37,12 @@ export const SignupUser = createAsyncThunk("/signup", async (data) => {
 });
 
 export const LoginUser = createAsyncThunk("/login", async (data) => {
-
   try {
     let userdata = await axios.post(
       "http://localhost:8090/user/api/login",
       data
     );
-    console.log("userdata", userdata);
+
     Cookie.set("token", userdata.data?.token);
     return userdata.data;
   } catch (error) {
@@ -50,8 +56,9 @@ const productReducer = createSlice({
     products: [],
     status: false,
     count: 0,
-    isLogin: false,
+    isLogin: Cookie.get("token") ? true : false,
     user: {},
+    token: Cookie.get("token") ? Cookie.get("token") : null,
   },
   reducers: {
     inc: (state, action) => {
